@@ -1,0 +1,8 @@
+{
+  "name": "PAS Scanner",
+  "description": "An application to scan airport pass (PAS) cards using the camera and extract information with OCR.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "prompt": ""
+}

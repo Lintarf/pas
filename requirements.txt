@@ -1,0 +1,20 @@
+# This is a frontend web application and does not have Python dependencies.
+# The requirements below are for setting up a local development environment.
+
+# 1. A modern web browser
+#    - Google Chrome (recommended for best performance)
+#    - Firefox
+#    - Safari
+
+# 2. A local web server to serve the files.
+#    You can use one of the following methods:
+
+#    - OPTION A: Node.js with the 'serve' package (Recommended)
+#      To install Node.js, visit https://nodejs.org/
+#      To run the server, open a terminal in the project folder and run:
+#      npx serve .
+
+#    - OPTION B: Python 3
+#      Python is often pre-installed on macOS and Linux.
+#      To run the server, open a terminal in the project folder and run:
+#      python -m http.server 8000
