@@ -27,15 +27,32 @@ const preprocessImage = async (imageDataUrl: string): Promise<string> => {
             const histogram = new Array(256).fill(0);
             const totalPixels = imageData.width * imageData.height;
 
-            // Langkah 1: Konversi ke Grayscale (menggunakan metode luminositas) & buat histogram
+            // Langkah 1: Konversi ke Grayscale dengan peningkatan kontras
+            let minVal = 255;
+            let maxVal = 0;
+            
+            // Pass pertama: cari nilai minimum dan maksimum
             for (let i = 0; i < data.length; i += 4) {
                 const r = data[i];
                 const g = data[i + 1];
                 const b = data[i + 2];
+                // Menggunakan BT.601 untuk konversi yang lebih akurat
                 const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
                 histogram[gray]++;
-                // Simpan nilai grayscale di channel merah untuk digunakan nanti
-                data[i] = gray; 
+                if (gray < minVal) minVal = gray;
+                if (gray > maxVal) maxVal = gray;
+                data[i] = gray;
+            }
+            
+            // Pass kedua: normalisasi kontras
+            const range = maxVal - minVal;
+            for (let i = 0; i < data.length; i += 4) {
+                const gray = data[i];
+                // Peningkatan kontras dengan normalisasi
+                const normalized = Math.round(((gray - minVal) / range) * 255);
+                data[i] = normalized;
+                data[i + 1] = normalized;
+                data[i + 2] = normalized;
             }
 
             // Langkah 2: Hitung ambang batas Otsu
@@ -104,15 +121,21 @@ export const processImageWithOCR = async (imageDataUrl: string): Promise<Omit<Id
         // Langkah 2: Mengenali teks menggunakan Tesseract.js
         const { data: { text } } = await Tesseract.recognize(
             processedImageUrl,
-            'eng', // Bahasa: Inggris
+            'eng+ind', // Bahasa: Inggris + Indonesia untuk meningkatkan akurasi
             {
-                logger: m => console.log(m), // Opsi untuk melihat progres di konsol
-                // Mengatur mode segmentasi halaman ke 4 (Asumsikan satu kolom teks).
-                // Ini lebih baik untuk tata letak kartu ID daripada psm_6 atau psm_3.
-                psm: 'psm_4',
-                // Whitelist karakter untuk mencegah OCR "berhalusinasi" menghasilkan simbol aneh.
-                // Ini secara drastis meningkatkan akurasi untuk dokumen terstruktur.
-                tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789. '
+                logger: m => console.log(m),
+                // Mengoptimalkan konfigurasi OCR untuk kartu ID
+                psm: 'psm_6', // Single uniform block of text - lebih cocok untuk kartu ID
+                tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-. ',
+                tessjs_create_pdf: '0', // Nonaktifkan pembuatan PDF untuk kecepatan
+                tessjs_create_hocr: '0', // Nonaktifkan pembuatan HOCR untuk kecepatan
+                // Parameter tambahan untuk meningkatkan akurasi
+                tessedit_do_invert: '0',
+                tessedit_enable_doc_dict: '0',
+                tessedit_pageseg_mode: '6',
+                textord_heavy_nr: '1',
+                textord_force_make_prop_words: '1',
+                edges_max_children_per_outline: '40'
             }
         );
 
